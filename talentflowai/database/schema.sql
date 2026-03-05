@@ -1,0 +1,56 @@
+CREATE TABLE users (
+	id INT PRIMARY KEY AUTO_INCREMENT,
+	name VARCHAR(120) NOT NULL,
+	email VARCHAR(180) NOT NULL UNIQUE,
+	password_hash VARCHAR(255) NOT NULL,
+	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE profiles (
+	id INT PRIMARY KEY AUTO_INCREMENT,
+	user_id INT NOT NULL UNIQUE,
+	skills TEXT,
+	years_experience INT DEFAULT 0,
+	expected_salary DECIMAL(10,2) DEFAULT 0,
+	location VARCHAR(120),
+	modality VARCHAR(30),
+	summary TEXT,
+	updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE jobs (
+	id INT PRIMARY KEY AUTO_INCREMENT,
+	title VARCHAR(160) NOT NULL,
+	company VARCHAR(160) NOT NULL,
+	required_skills TEXT,
+	salary DECIMAL(10,2),
+	location VARCHAR(120),
+	modality VARCHAR(30),
+	description TEXT,
+	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE applications (
+	id INT PRIMARY KEY AUTO_INCREMENT,
+	user_id INT NOT NULL,
+	job_id INT NOT NULL,
+	status VARCHAR(30) NOT NULL DEFAULT 'Postulado',
+	source VARCHAR(20) NOT NULL DEFAULT 'manual',
+	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	UNIQUE KEY unique_user_job (user_id, job_id),
+	FOREIGN KEY (user_id) REFERENCES users(id),
+	FOREIGN KEY (job_id) REFERENCES jobs(id)
+);
+
+CREATE TABLE notifications (
+	id INT PRIMARY KEY AUTO_INCREMENT,
+	user_id INT NOT NULL,
+	application_id INT,
+	message VARCHAR(255) NOT NULL,
+	is_read BOOLEAN DEFAULT FALSE,
+	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	FOREIGN KEY (user_id) REFERENCES users(id),
+	FOREIGN KEY (application_id) REFERENCES applications(id)
+);

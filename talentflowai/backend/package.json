@@ -1,1 +1,16 @@
-{}
+{
+	"name": "talentflowai-backend",
+	"version": "1.0.0",
+	"description": "MVP backend for TalentFlow AI",
+	"main": "app.js",
+	"scripts": {
+		"start": "node app.js",
+		"dev": "node --watch app.js"
+	},
+	"dependencies": {
+		"bcryptjs": "^2.4.3",
+		"cors": "^2.8.5",
+		"express": "^4.21.2",
+		"jsonwebtoken": "^9.0.2"
+	}
+}
