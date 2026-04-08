@@ -1,1 +1,45 @@
-{}
+{
+  "name": "talentflow-ai-backend",
+  "version": "1.0.0",
+  "description": "Backend API para TalentFlow AI - Sistema de matching candidatos-vacantes",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "test": "jest --coverage",
+    "seed": "node src/utils/seedData.js"
+  },
+  "keywords": [
+    "talent",
+    "matching",
+    "neo4j",
+    "ai",
+    "recruitment"
+  ],
+  "author": "Grupo 5 - Alejandro Correa Marin, Juan Jose Palacio Z",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "neo4j-driver": "^5.15.0",
+    "pg": "^8.11.3",
+    "multer": "^1.4.5-lts.1",
+    "pdf-parse": "^1.1.1",
+    "mammoth": "^1.6.0",
+    "openai": "^4.24.1",
+    "express-validator": "^7.0.1",
+    "helmet": "^7.1.0",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

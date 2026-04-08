@@ -1,9 +1,266 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <title>TalentFlow AI</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TalentFlow AI - Matching Inteligente de Empleo</title>
+    <link rel="stylesheet" href="src/styles/main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <div id="root"></div>
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">
+            <i class="fas fa-brain"></i>
+            <span>TalentFlow AI</span>
+        </div>
+        <nav class="nav" id="mainNav">
+            <a href="#" data-page="home">Inicio</a>
+            <a href="#" data-page="vacancies">Vacantes</a>
+            <a href="#" data-page="recommendations">Recomendaciones</a>
+            <a href="#" data-page="applications">Mis Postulaciones</a>
+            <a href="#" data-page="profile">Mi Perfil</a>
+        </nav>
+        <div class="auth-buttons" id="authButtons">
+            <button class="btn btn-outline" onclick="showModal('login')">Iniciar Sesión</button>
+            <button class="btn btn-primary" onclick="showModal('register')">Registrarse</button>
+        </div>
+        <div class="user-menu" id="userMenu" style="display: none;">
+            <span id="userName"></span>
+            <button class="btn btn-outline btn-sm" onclick="logout()">Cerrar Sesión</button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+        <!-- Home Page -->
+        <section id="homePage" class="page active">
+            <div class="hero">
+                <h1>Encuentra tu trabajo ideal con <span class="gradient-text">Inteligencia Artificial</span></h1>
+                <p>TalentFlow AI analiza tu perfil y te conecta con las vacantes más compatibles</p>
+                <div class="hero-buttons">
+                    <button class="btn btn-primary btn-lg" onclick="showModal('register')">
+                        <i class="fas fa-rocket"></i> Comenzar Ahora
+                    </button>
+                    <button class="btn btn-outline btn-lg" onclick="navigateTo('vacancies')">
+                        <i class="fas fa-search"></i> Explorar Vacantes
+                    </button>
+                </div>
+            </div>
+
+            <div class="features">
+                <div class="feature-card">
+                    <i class="fas fa-file-upload"></i>
+                    <h3>Carga tu CV</h3>
+                    <p>Nuestro sistema extrae automáticamente tus habilidades con IA</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-chart-line"></i>
+                    <h3>Score de Compatibilidad</h3>
+                    <p>Ve exactamente por qué una vacante es perfecta para ti</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-robot"></i>
+                    <h3>Autopostulación</h3>
+                    <p>Activa nuestro agente IA para postularte automáticamente</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-columns"></i>
+                    <h3>Tablero Kanban</h3>
+                    <p>Sigue el estado de todas tus postulaciones en tiempo real</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Vacancies Page -->
+        <section id="vacanciesPage" class="page">
+            <h2>Vacantes Disponibles</h2>
+            <div class="filters">
+                <input type="text" id="searchVacancy" placeholder="Buscar vacantes..." class="input-search">
+                <select id="filterModality" class="select-filter">
+                    <option value="">Todas las modalidades</option>
+                    <option value="remote">Remoto</option>
+                    <option value="hybrid">Híbrido</option>
+                    <option value="onsite">Presencial</option>
+                </select>
+                <select id="filterLocation" class="select-filter">
+                    <option value="">Todas las ubicaciones</option>
+                    <option value="Medellín">Medellín</option>
+                    <option value="Bogotá">Bogotá</option>
+                    <option value="Cali">Cali</option>
+                </select>
+            </div>
+            <div id="vacanciesList" class="vacancies-grid">
+                <!-- Vacantes se cargan dinámicamente -->
+            </div>
+        </section>
+
+        <!-- Recommendations Page -->
+        <section id="recommendationsPage" class="page">
+            <h2><i class="fas fa-star"></i> Vacantes Recomendadas para Ti</h2>
+            <p class="subtitle">Basadas en tus habilidades y expectativas laborales</p>
+            <div id="recommendationsList" class="vacancies-grid">
+                <!-- Recomendaciones se cargan dinámicamente -->
+            </div>
+        </section>
+
+        <!-- Applications Page (Kanban) -->
+        <section id="applicationsPage" class="page">
+            <h2><i class="fas fa-tasks"></i> Mis Postulaciones</h2>
+            <div class="kanban-board" id="kanbanBoard">
+                <div class="kanban-column" data-status="postulado">
+                    <h3><i class="fas fa-paper-plane"></i> Postulado</h3>
+                    <div class="kanban-cards" id="col-postulado"></div>
+                </div>
+                <div class="kanban-column" data-status="en_revision">
+                    <h3><i class="fas fa-eye"></i> En Revisión</h3>
+                    <div class="kanban-cards" id="col-en_revision"></div>
+                </div>
+                <div class="kanban-column" data-status="entrevista">
+                    <h3><i class="fas fa-comments"></i> Entrevista</h3>
+                    <div class="kanban-cards" id="col-entrevista"></div>
+                </div>
+                <div class="kanban-column" data-status="oferta">
+                    <h3><i class="fas fa-handshake"></i> Oferta</h3>
+                    <div class="kanban-cards" id="col-oferta"></div>
+                </div>
+                <div class="kanban-column" data-status="descartado">
+                    <h3><i class="fas fa-times-circle"></i> Descartado</h3>
+                    <div class="kanban-cards" id="col-descartado"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Profile Page -->
+        <section id="profilePage" class="page">
+            <h2><i class="fas fa-user"></i> Mi Perfil</h2>
+            <div class="profile-container">
+                <div class="profile-section">
+                    <h3>Información Personal</h3>
+                    <form id="profileForm">
+                        <div class="form-group">
+                            <label>Nombre Completo</label>
+                            <input type="text" id="profileName" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="profileEmail" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label>Teléfono</label>
+                            <input type="tel" id="profilePhone">
+                        </div>
+                        <div class="form-group">
+                            <label>Ubicación</label>
+                            <input type="text" id="profileLocation">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                    </form>
+                </div>
+
+                <div class="profile-section">
+                    <h3>Cargar CV</h3>
+                    <div class="cv-upload">
+                        <input type="file" id="cvFile" accept=".pdf,.doc,.docx" style="display: none;">
+                        <button class="btn btn-outline" onclick="document.getElementById('cvFile').click()">
+                            <i class="fas fa-upload"></i> Subir CV (PDF/Word)
+                        </button>
+                        <span id="cvFileName"></span>
+                    </div>
+                    <div id="extractedSkills" class="skills-container" style="margin-top: 1rem;"></div>
+                </div>
+
+                <div class="profile-section">
+                    <h3>Expectativas Laborales</h3>
+                    <form id="expectationsForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Salario Mínimo (COP)</label>
+                                <input type="number" id="minSalary" placeholder="5000000">
+                            </div>
+                            <div class="form-group">
+                                <label>Salario Máximo (COP)</label>
+                                <input type="number" id="maxSalary" placeholder="10000000">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Modalidad Preferida</label>
+                            <select id="workModality">
+                                <option value="">Seleccionar...</option>
+                                <option value="remote">Remoto</option>
+                                <option value="hybrid">Híbrido</option>
+                                <option value="onsite">Presencial</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Ubicaciones Preferidas</label>
+                            <input type="text" id="preferredLocations" placeholder="Medellín, Bogotá">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Guardar Expectativas</button>
+                    </form>
+                </div>
+
+                <div class="profile-section">
+                    <h3>Autopostulación</h3>
+                    <div class="auto-apply-toggle">
+                        <label class="switch">
+                            <input type="checkbox" id="autoApplyToggle">
+                            <span class="slider"></span>
+                        </label>
+                        <span>Activar postulación automática a vacantes con score &gt; 80%</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modals -->
+    <div class="modal" id="loginModal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('login')">&times;</span>
+            <h2>Iniciar Sesión</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="loginEmail" required>
+                </div>
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <input type="password" id="loginPassword" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Ingresar</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="registerModal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('register')">&times;</span>
+            <h2>Crear Cuenta</h2>
+            <form id="registerForm">
+                <div class="form-group">
+                    <label>Nombre Completo</label>
+                    <input type="text" id="registerName" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="registerEmail" required>
+                </div>
+                <div class="form-group">
+                    <label>Contraseña (mínimo 8 caracteres)</label>
+                    <input type="password" id="registerPassword" minlength="8" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Registrarse</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Scripts -->
+    <script src="src/services/api.service.js"></script>
+    <script src="src/services/auth.service.js"></script>
+    <script src="src/pages/app.js"></script>
 </body>
 </html>
