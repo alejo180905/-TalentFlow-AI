@@ -4,9 +4,16 @@
 
 const OpenAI = require('openai');
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY
-});
+// Inicialización lazy de OpenAI (solo si hay API key)
+let openai = null;
+function getOpenAI() {
+    if (!openai && process.env.OPENAI_API_KEY) {
+        openai = new OpenAI({
+            apiKey: process.env.OPENAI_API_KEY
+        });
+    }
+    return openai;
+}
 
 const cvService = {
     /**
@@ -20,7 +27,8 @@ const cvService = {
         }
 
         try {
-            const response = await openai.chat.completions.create({
+            const client = getOpenAI();
+            const response = await client.chat.completions.create({
                 model: 'gpt-3.5-turbo',
                 messages: [
                     {

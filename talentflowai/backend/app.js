@@ -33,7 +33,7 @@ app.use(helmet());
 
 // CORS
 app.use(cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5500',
+    origin: true,
     credentials: true
 }));
 
@@ -97,13 +97,15 @@ app.use((err, req, res, next) => {
 
 async function startServer() {
     try {
-        // Conectar a PostgreSQL
+        // Conectar a PostgreSQL (requerido)
         await connectPostgres();
         console.log('✅ PostgreSQL conectado');
 
-        // Conectar a Neo4j
-        await connectNeo4j();
-        console.log('✅ Neo4j conectado');
+        // Conectar a Neo4j (opcional)
+        const neo4jConnected = await connectNeo4j();
+        if (neo4jConnected) {
+            console.log('✅ Neo4j conectado');
+        }
 
         // Iniciar servidor
         app.listen(PORT, () => {
@@ -112,6 +114,7 @@ async function startServer() {
 ║     🚀 TalentFlow AI Backend                  ║
 ║     Puerto: ${PORT}                              ║
 ║     Modo: ${process.env.NODE_ENV || 'development'}                    ║
+║     Neo4j: ${neo4jConnected ? 'Conectado' : 'No disponible'}                   ║
 ╚═══════════════════════════════════════════════╝
             `);
         });

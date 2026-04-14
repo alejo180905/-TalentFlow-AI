@@ -5,14 +5,21 @@
 const neo4j = require('neo4j-driver');
 
 let driver = null;
+let isConnected = false;
 
 /**
  * Conectar a Neo4j
  */
 async function connectNeo4j() {
+    // Si no hay URI configurada, saltar Neo4j
+    if (!process.env.NEO4J_URI) {
+        console.warn('⚠️ Neo4j: No configurado (NEO4J_URI vacío). Usando modo sin grafo.');
+        return false;
+    }
+
     try {
         driver = neo4j.driver(
-            process.env.NEO4J_URI || 'bolt://localhost:7687',
+            process.env.NEO4J_URI,
             neo4j.auth.basic(
                 process.env.NEO4J_USER || 'neo4j',
                 process.env.NEO4J_PASSWORD || 'password'
@@ -26,11 +33,13 @@ async function connectNeo4j() {
 
         // Verify connectivity
         await driver.verifyConnectivity();
+        isConnected = true;
         console.log('🔗 Neo4j: Conexión establecida');
         return true;
     } catch (error) {
-        console.error('❌ Neo4j: Error de conexión', error.message);
-        throw error;
+        console.warn('⚠️ Neo4j: No disponible -', error.message);
+        console.warn('   Continuando sin Neo4j (skill matching básico)');
+        return false;
     }
 }
 

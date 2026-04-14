@@ -8,6 +8,100 @@ El sistema permite a los usuarios (candidatos) cargar su CV, extraer automática
 
 ---
 
+## Stack Tecnológico
+
+### Backend
+| Tecnología | Versión | Propósito |
+|------------|---------|-----------|
+| Node.js | 20.x LTS | Runtime de JavaScript |
+| Express.js | 4.18.x | Framework web REST API |
+| Neo4j Driver | 5.x | Conexión a base de datos de grafos |
+| PostgreSQL | 15.x | Base de datos relacional (usuarios, postulaciones) |
+| JWT | - | Autenticación stateless |
+| bcrypt | 5.x | Hash de contraseñas |
+| Multer | 1.4.x | Upload de archivos (CV) |
+| pdf-parse | 3.x | Extracción de texto de PDFs |
+
+### Frontend
+| Tecnología | Versión | Propósito |
+|------------|---------|-----------|
+| HTML5/CSS3 | - | Estructura y estilos |
+| JavaScript ES6+ | - | Lógica del cliente |
+| Fetch API | - | Comunicación con backend |
+
+### Base de Datos
+| Tecnología | Propósito |
+|------------|-----------|
+| **Neo4j AuraDB** | Grafos para relaciones Skills ↔ Roles ↔ Vacantes |
+| **PostgreSQL** | Datos estructurados (usuarios, postulaciones, historial) |
+
+### Inteligencia Artificial
+| Servicio | Modelo | Propósito |
+|----------|--------|-----------|
+| **OpenAI API** | GPT-4 / GPT-3.5-turbo | Extracción de habilidades del CV |
+| **GitHub Copilot** | Claude | Asistencia en desarrollo y documentación |
+
+### Infraestructura
+| Servicio | Propósito |
+|----------|-----------|
+| Docker | Contenedorización |
+| Git/GitHub | Control de versiones |
+
+---
+
+## Análisis Comparativo de Aplicaciones Similares
+
+### Aplicaciones Analizadas
+
+| Característica | LinkedIn | Indeed | Glassdoor | Computrabajo | **TalentFlow AI** |
+|----------------|----------|--------|-----------|--------------|-------------------|
+| **Extracción automática CV** | ✅ Parcial | ❌ Manual | ❌ Manual | ❌ Manual | ✅ **IA (GPT-4)** |
+| **Matching basado en grafos** | ✅ Propietario | ❌ Keywords | ❌ Keywords | ❌ Básico | ✅ **Neo4j** |
+| **Score de compatibilidad** | ❌ No visible | ✅ Básico | ❌ No | ❌ No | ✅ **Transparente** |
+| **Autopostulación** | ❌ No | ✅ Easy Apply | ❌ No | ❌ No | ✅ **Agente IA** |
+| **Tablero Kanban** | ❌ No | ❌ No | ❌ No | ❌ No | ✅ **Sí** |
+| **Expectativas laborales** | ✅ LinkedIn | ✅ Filtros | ✅ Filtros | ✅ Filtros | ✅ **Integrado al matching** |
+| **Código abierto** | ❌ No | ❌ No | ❌ No | ❌ No | ✅ **Sí** |
+
+### Ventajas Competitivas de TalentFlow AI
+
+1. **Motor de Recomendación con Grafos (Neo4j)**
+   - A diferencia de LinkedIn (algoritmo propietario) o Indeed (keywords), usamos grafos para modelar relaciones semánticas entre Skills, Roles y Vacantes.
+   - Permite descubrir vacantes por habilidades relacionadas, no solo coincidencias exactas.
+
+2. **Transparencia en el Score**
+   - El candidato ve exactamente por qué una vacante tiene X% de compatibilidad.
+   - Desglose: % por skills, % por salario, % por ubicación.
+
+3. **Agente de Autopostulación Inteligente**
+   - No solo aplica a todo (como Indeed Easy Apply), sino que filtra por score mínimo y preferencias.
+   - El candidato mantiene control total (activar/desactivar).
+
+4. **Tablero de Seguimiento Visual**
+   - Ningún competidor ofrece un Kanban integrado para seguir el estado de las postulaciones.
+
+5. **Extracción de CV con IA**
+   - Usa GPT-4 para entender contexto, no solo extraer keywords.
+   - Identifica skills implícitas ("Lideré un equipo de 5 personas" → Leadership, Team Management).
+
+### Limitaciones vs Competidores
+
+| Aspecto | Competidores | TalentFlow AI (MVP) |
+|---------|--------------|---------------------|
+| Base de vacantes | Millones | Mock/Dataset limitado |
+| Red social | LinkedIn tiene networking | No incluido en MVP |
+| Reviews de empresas | Glassdoor | No incluido |
+| App móvil nativa | Todas tienen | Web responsive (MVP) |
+
+---
+
+## Diagramas del Sistema
+
+- [Diagrama de Contexto](talentflowai/docs/diagrama-contexto.md) - Vista C4 nivel 1
+- [Diagrama de Interacción](talentflowai/docs/diagrama-interaccion.md) - Flujos de proceso
+
+---
+
 ## Requisitos Funcionales
 
 1. **Registro e inicio de sesión**:
