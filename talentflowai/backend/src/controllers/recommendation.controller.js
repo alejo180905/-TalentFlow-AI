@@ -4,6 +4,43 @@
 
 const { query } = require('../utils/database');
 const { getRecommendedVacancies, runQuery } = require('../utils/neo4j');
+const { scoreJob } = require('../services/recommendationService');
+
+async function getCandidateSkills(userId) {
+    try {
+        const userSkills = await runQuery(`
+            MATCH (c:Candidate {userId: $userId})-[:HAS_SKILL]->(s:Skill)
+            RETURN COLLECT(s.name) AS skills
+        `, { userId });
+
+        return userSkills[0]?.get('skills') || [];
+    } catch (error) {
+        console.error('Error obteniendo skills del candidato:', error);
+        return [];
+    }
+}
+
+function buildProfile(expectations, user, candidateSkills) {
+    return {
+        skills: candidateSkills,
+        minSalary: expectations?.min_salary,
+        maxSalary: expectations?.max_salary,
+        modality: expectations?.work_modality,
+        preferredLocations: expectations?.preferred_locations || (user?.location ? [user.location] : []),
+        willingToRelocate: expectations?.willing_to_relocate || false
+    };
+}
+
+function normalizeVacancy(vacancy) {
+    return {
+        ...vacancy,
+        minSalary: vacancy.minSalary ?? vacancy.min_salary,
+        maxSalary: vacancy.maxSalary ?? vacancy.max_salary,
+        workModality: vacancy.workModality ?? vacancy.work_modality,
+        skills: vacancy.skills || vacancy.required_skills || [],
+        experienceYears: vacancy.experienceYears ?? vacancy.experience_years
+    };
+}
 
 const recommendationController = {
     /**
@@ -19,6 +56,13 @@ const recommendationController = {
                 [req.user.userId]
             );
             const expectations = expectationsResult.rows[0];
+            const userResult = await query(
+                'SELECT location FROM users WHERE id = $1',
+                [req.user.userId]
+            );
+            const user = userResult.rows[0] || null;
+            const candidateSkills = await getCandidateSkills(req.user.userId);
+            const profile = buildProfile(expectations, user, candidateSkills);
 
             // Obtener recomendaciones de Neo4j basadas en skills
             let recommendations = [];
@@ -38,65 +82,19 @@ const recommendationController = {
                 }));
             }
 
-            // Ajustar score con expectativas
-            if (expectations) {
-                recommendations = recommendations.map(vacancy => {
-                    let finalScore = vacancy.skillScore || 50;
-                    let scoreBreakdown = {
-                        skills: vacancy.skillScore || 50,
-                        salary: 0,
-                        location: 0,
-                        modality: 0
-                    };
-
-                    // Score por salario (25%)
-                    if (expectations.min_salary && vacancy.maxSalary) {
-                        if (vacancy.maxSalary >= expectations.min_salary) {
-                            scoreBreakdown.salary = 100;
-                        } else {
-                            const ratio = vacancy.maxSalary / expectations.min_salary;
-                            scoreBreakdown.salary = Math.round(ratio * 100);
-                        }
-                    } else {
-                        scoreBreakdown.salary = 50;
-                    }
-
-                    // Score por modalidad (15%)
-                    if (expectations.work_modality && vacancy.workModality) {
-                        scoreBreakdown.modality =
-                            expectations.work_modality === vacancy.workModality ? 100 : 30;
-                    } else {
-                        scoreBreakdown.modality = 50;
-                    }
-
-                    // Score por ubicación (10%)
-                    if (expectations.preferred_locations && vacancy.location) {
-                        const isPreferred = expectations.preferred_locations.some(
-                            loc => vacancy.location.toLowerCase().includes(loc.toLowerCase())
-                        );
-                        scoreBreakdown.location = isPreferred ? 100 : 30;
-                    } else {
-                        scoreBreakdown.location = 50;
-                    }
-
-                    // Calcular score final ponderado
-                    finalScore = Math.round(
-                        scoreBreakdown.skills * 0.50 +
-                        scoreBreakdown.salary * 0.25 +
-                        scoreBreakdown.modality * 0.15 +
-                        scoreBreakdown.location * 0.10
-                    );
+            recommendations = recommendations
+                .map((vacancy) => {
+                    const normalizedVacancy = normalizeVacancy(vacancy);
+                    const result = scoreJob(profile, normalizedVacancy);
 
                     return {
                         ...vacancy,
-                        compatibilityScore: finalScore,
-                        scoreBreakdown
+                        compatibilityScore: result.score,
+                        scoreBreakdown: result.rawScores,
+                        reasons: result.reasons
                     };
-                });
-
-                // Ordenar por score final
-                recommendations.sort((a, b) => b.compatibilityScore - a.compatibilityScore);
-            }
+                })
+                .sort((a, b) => b.compatibilityScore - a.compatibilityScore);
 
             res.json({
                 success: true,
@@ -118,25 +116,7 @@ const recommendationController = {
         try {
             const { vacancyId } = req.params;
 
-            // Obtener skills del usuario
-            const userSkills = await runQuery(`
-                MATCH (c:Candidate {userId: $userId})-[:HAS_SKILL]->(s:Skill)
-                RETURN COLLECT(s.name) AS skills
-            `, { userId: req.user.userId });
-
-            const candidateSkills = userSkills[0]?.get('skills') || [];
-
-            // Obtener skills requeridas por la vacante
-            const vacancySkills = await runQuery(`
-                MATCH (v:Vacancy {externalId: $vacancyId})-[:REQUIRES_SKILL]->(s:Skill)
-                RETURN COLLECT(s.name) AS skills
-            `, { vacancyId });
-
-            const requiredSkills = vacancySkills[0]?.get('skills') || [];
-
-            // Calcular coincidencias
-            const matchedSkills = candidateSkills.filter(s => requiredSkills.includes(s));
-            const missingSkills = requiredSkills.filter(s => !candidateSkills.includes(s));
+            const candidateSkills = await getCandidateSkills(req.user.userId);
 
             // Obtener expectativas
             const expectations = await query(
@@ -150,70 +130,64 @@ const recommendationController = {
                 [vacancyId]
             );
 
+            const userResult = await query(
+                'SELECT location FROM users WHERE id = $1',
+                [req.user.userId]
+            );
+
             const exp = expectations.rows[0];
             const vac = vacancy.rows[0];
+            const user = userResult.rows[0] || null;
+
+            if (!vac) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Vacante no encontrada'
+                });
+            }
+
+            const profile = buildProfile(exp, user, candidateSkills);
+            const result = scoreJob(profile, normalizeVacancy(vac));
+            const requiredSkills = vac.required_skills || [];
+            const matchedSkills = result.matchedSkills;
+            const missingSkills = requiredSkills.filter(skill => !matchedSkills.includes(skill));
 
             const breakdown = {
                 skills: {
-                    score: requiredSkills.length > 0
-                        ? Math.round((matchedSkills.length / requiredSkills.length) * 100)
-                        : 50,
-                    weight: '50%',
+                    score: result.rawScores.skills,
+                    weight: '40%',
                     matched: matchedSkills,
                     missing: missingSkills,
                     total: requiredSkills.length
                 },
                 salary: {
-                    score: 50,
-                    weight: '25%',
+                    score: result.rawScores.salary,
+                    weight: '24%',
                     expected: exp?.min_salary,
                     offered: vac?.max_salary,
                     meets: vac?.max_salary >= (exp?.min_salary || 0)
                 },
-                modality: {
-                    score: 50,
-                    weight: '15%',
-                    expected: exp?.work_modality,
-                    offered: vac?.work_modality,
-                    meets: exp?.work_modality === vac?.work_modality
-                },
                 location: {
-                    score: 50,
-                    weight: '10%',
+                    score: result.rawScores.location,
+                    weight: '18%',
                     preferred: exp?.preferred_locations,
-                    offered: vac?.location
+                    offered: vac?.location,
+                    modality: vac?.work_modality
+                },
+                experience: {
+                    score: result.rawScores.experience,
+                    weight: '17%',
+                    candidate: null,
+                    required: vac?.experience_years,
+                    meets: false
                 }
             };
-
-            // Calcular scores
-            if (exp?.min_salary && vac?.max_salary) {
-                breakdown.salary.score = vac.max_salary >= exp.min_salary ? 100 :
-                    Math.round((vac.max_salary / exp.min_salary) * 100);
-            }
-
-            if (exp?.work_modality && vac?.work_modality) {
-                breakdown.modality.score = exp.work_modality === vac.work_modality ? 100 : 30;
-            }
-
-            if (exp?.preferred_locations && vac?.location) {
-                const isMatch = exp.preferred_locations.some(
-                    loc => vac.location.toLowerCase().includes(loc.toLowerCase())
-                );
-                breakdown.location.score = isMatch ? 100 : 30;
-            }
-
-            const finalScore = Math.round(
-                breakdown.skills.score * 0.50 +
-                breakdown.salary.score * 0.25 +
-                breakdown.modality.score * 0.15 +
-                breakdown.location.score * 0.10
-            );
 
             res.json({
                 success: true,
                 data: {
                     vacancyId,
-                    finalScore,
+                    finalScore: result.score,
                     breakdown
                 }
             });

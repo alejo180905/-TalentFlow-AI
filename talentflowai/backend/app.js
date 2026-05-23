@@ -18,7 +18,7 @@ const applicationRoutes = require('./src/routes/application.routes');
 const recommendationRoutes = require('./src/routes/recommendation.routes');
 
 // Importar conexiones a BD
-const { connectPostgres } = require('./src/utils/database');
+const { connectPostgres, ensureUserSkillsTable } = require('./src/utils/database');
 const { connectNeo4j } = require('./src/utils/neo4j');
 
 const app = express();
@@ -100,6 +100,9 @@ async function startServer() {
         // Conectar a PostgreSQL (requerido)
         await connectPostgres();
         console.log('✅ PostgreSQL conectado');
+
+        // Asegurar tabla de skills persistidas
+        await ensureUserSkillsTable();
 
         // Conectar a Neo4j (opcional)
         const neo4jConnected = await connectNeo4j();

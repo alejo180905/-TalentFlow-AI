@@ -109,9 +109,17 @@ const profileController = {
             // Extraer habilidades con IA
             const skills = await cvService.extractSkills(cvText);
 
+            // Guardar habilidades en PostgreSQL para que queden persistidas en el perfil
+            await UserModel.saveSkills(req.user.userId, skills);
+
             // Guardar habilidades en Neo4j
             if (skills.length > 0) {
-                await addSkillsToCandidate(req.user.userId, skills);
+                try {
+                    await addSkillsToCandidate(req.user.userId, skills);
+                } catch (neo4jError) {
+                    console.error('Error guardando skills en Neo4j:', neo4jError);
+                    // No fallar la subida del CV por indisponibilidad del grafo
+                }
             }
 
             res.json({
@@ -132,18 +140,26 @@ const profileController = {
      */
     async getSkills(req, res, next) {
         try {
-            const records = await runQuery(`
-                MATCH (c:Candidate {userId: $userId})-[r:HAS_SKILL]->(s:Skill)
-                RETURN s.name AS name, s.displayName AS displayName,
-                       s.category AS category, r.level AS level
-            `, { userId: req.user.userId });
+            let skills = await UserModel.getSkills(req.user.userId);
 
-            const skills = records.map(record => ({
-                name: record.get('name'),
-                displayName: record.get('displayName'),
-                category: record.get('category'),
-                level: record.get('level')
-            }));
+            if (skills.length === 0) {
+                try {
+                    const records = await runQuery(`
+                        MATCH (c:Candidate {userId: $userId})-[r:HAS_SKILL]->(s:Skill)
+                        RETURN s.name AS name, s.displayName AS displayName,
+                               s.category AS category, r.level AS level
+                    `, { userId: req.user.userId });
+
+                    skills = records.map(record => ({
+                        name: record.get('name'),
+                        displayName: record.get('displayName'),
+                        category: record.get('category'),
+                        level: record.get('level')
+                    }));
+                } catch (neo4jError) {
+                    console.error('Error obteniendo skills de Neo4j:', neo4jError);
+                }
+            }
 
             res.json({
                 success: true,
@@ -169,12 +185,18 @@ const profileController = {
             }
 
             // Eliminar skills existentes y agregar nuevas
-            await runQuery(`
-                MATCH (c:Candidate {userId: $userId})-[r:HAS_SKILL]->()
-                DELETE r
-            `, { userId: req.user.userId });
+            await UserModel.saveSkills(req.user.userId, skills);
 
-            await addSkillsToCandidate(req.user.userId, skills);
+            try {
+                await runQuery(`
+                    MATCH (c:Candidate {userId: $userId})-[r:HAS_SKILL]->()
+                    DELETE r
+                `, { userId: req.user.userId });
+
+                await addSkillsToCandidate(req.user.userId, skills);
+            } catch (neo4jError) {
+                console.error('Error actualizando skills en Neo4j:', neo4jError);
+            }
 
             res.json({
                 success: true,

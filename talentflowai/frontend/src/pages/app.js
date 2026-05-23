@@ -367,13 +367,21 @@ function displayKanban(board) {
 function displayExtractedSkills(skills) {
     const container = document.getElementById('extractedSkills');
     if (!skills || skills.length === 0) {
-        container.innerHTML = '<p style="color: #888;">No hay habilidades extraídas</p>';
+        container.innerHTML = `
+            <div class="skills-section-title">Habilidades identificadas en cv</div>
+            <p style="color: #888;">No hay habilidades extraídas</p>
+        `;
         return;
     }
 
-    container.innerHTML = skills.map(s =>
-        `<span class="skill-tag">${s.displayName || s.name}</span>`
-    ).join('');
+    container.innerHTML = `
+        <div class="skills-section-title">Habilidades identificadas en cv</div>
+        <div class="skills-list">
+            ${skills.map(s =>
+                `<span class="skill-tag">${s.displayName || s.name}</span>`
+            ).join('')}
+        </div>
+    `;
 }
 
 // =====================================================

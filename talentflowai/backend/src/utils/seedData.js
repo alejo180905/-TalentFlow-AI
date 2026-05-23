@@ -171,8 +171,13 @@ async function seedPostgres() {
 async function seedNeo4j() {
     console.log('🌱 Iniciando seed de Neo4j...');
 
+    if (!process.env.NEO4J_URI) {
+        console.warn('⚠️ Neo4j no configurado. Saltando seed de grafo.');
+        return;
+    }
+
     const driver = neo4j.driver(
-        process.env.NEO4J_URI || 'bolt://localhost:7687',
+        process.env.NEO4J_URI,
         neo4j.auth.basic(
             process.env.NEO4J_USER || 'neo4j',
             process.env.NEO4J_PASSWORD || 'password'
@@ -221,6 +226,14 @@ async function seedNeo4j() {
                     v.workModality = $workModality,
                     v.minSalary = $minSalary,
                     v.maxSalary = $maxSalary,
+                    v.experienceYears = $experienceYears,
+                    v.isActive = true
+                ON MATCH SET
+                    v.location = $location,
+                    v.workModality = $workModality,
+                    v.minSalary = $minSalary,
+                    v.maxSalary = $maxSalary,
+                    v.experienceYears = $experienceYears,
                     v.isActive = true
             `, {
                 externalId,
@@ -229,7 +242,8 @@ async function seedNeo4j() {
                 location: vacancy.location,
                 workModality: vacancy.workModality,
                 minSalary: vacancy.minSalary,
-                maxSalary: vacancy.maxSalary
+                maxSalary: vacancy.maxSalary,
+                experienceYears: vacancy.experienceYears
             });
 
             // Relacionar con skills

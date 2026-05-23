@@ -79,6 +79,17 @@ const cvService = {
         const text = cvText.toLowerCase();
         const foundSkills = [];
 
+        const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const hasSkillMatch = (content, skillKey) => {
+            // Keys with non-word characters (e.g. c#, c++, .net, ci/cd) are matched by substring.
+            if (/[^a-z0-9\s]/i.test(skillKey)) {
+                return content.includes(skillKey);
+            }
+
+            const pattern = new RegExp(`\\b${escapeRegex(skillKey)}\\b`, 'i');
+            return pattern.test(content);
+        };
+
         // Lista de skills conocidas
         const skillsDatabase = {
             // Programming Languages
@@ -144,7 +155,7 @@ const cvService = {
         };
 
         for (const [key, value] of Object.entries(skillsDatabase)) {
-            if (text.includes(key)) {
+            if (hasSkillMatch(text, key)) {
                 foundSkills.push({
                     name: key.replace(/[^a-z0-9]/g, '_'),
                     displayName: value.displayName,

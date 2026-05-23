@@ -28,6 +28,26 @@ async function connectPostgres() {
     }
 }
 
+async function ensureUserSkillsTable() {
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS user_skills (
+            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+            user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            name VARCHAR(255) NOT NULL,
+            display_name VARCHAR(255) NOT NULL,
+            category VARCHAR(100) NOT NULL,
+            level VARCHAR(50) DEFAULT 'intermediate',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(user_id, name)
+        )
+    `);
+
+    await pool.query(`
+        CREATE INDEX IF NOT EXISTS idx_user_skills_user_id ON user_skills(user_id)
+    `);
+}
+
 // Query helper
 async function query(text, params) {
     const start = Date.now();
@@ -50,5 +70,6 @@ module.exports = {
     pool,
     query,
     getClient,
-    connectPostgres
+    connectPostgres,
+    ensureUserSkillsTable
 };

@@ -139,6 +139,7 @@ async function getRecommendedVacancies(userId, limit = 20) {
             .workModality,
             .minSalary,
             .maxSalary,
+            .experienceYears,
             skillScore: CASE WHEN totalRequired > 0
                 THEN ROUND((matchedSkills * 100.0 / totalRequired), 2)
                 ELSE 0

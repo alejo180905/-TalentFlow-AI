@@ -87,6 +87,60 @@ const UserModel = {
     },
 
     /**
+     * Guardar habilidades extraídas o manuales del usuario
+     */
+    async saveSkills(id, skills = []) {
+        await query('DELETE FROM user_skills WHERE user_id = $1', [id]);
+
+        if (!skills.length) {
+            return [];
+        }
+
+        const values = [];
+        const placeholders = skills.map((skill, index) => {
+            const base = index * 5;
+            values.push(
+                id,
+                skill.name,
+                skill.displayName || skill.name,
+                skill.category || 'general',
+                skill.level || 'intermediate'
+            );
+            return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5})`;
+        });
+
+        const result = await query(
+            `INSERT INTO user_skills (user_id, name, display_name, category, level)
+             VALUES ${placeholders.join(', ')}
+             ON CONFLICT (user_id, name)
+             DO UPDATE SET
+                 display_name = EXCLUDED.display_name,
+                 category = EXCLUDED.category,
+                 level = EXCLUDED.level,
+                 updated_at = CURRENT_TIMESTAMP
+             RETURNING name, display_name, category, level`,
+            values
+        );
+
+        return result.rows;
+    },
+
+    /**
+     * Obtener habilidades persistidas del usuario
+     */
+    async getSkills(id) {
+        const result = await query(
+            `SELECT name, display_name AS "displayName", category, level
+             FROM user_skills
+             WHERE user_id = $1
+             ORDER BY display_name ASC`,
+            [id]
+        );
+
+        return result.rows;
+    },
+
+    /**
      * Verificar contraseña
      */
     async verifyPassword(plainPassword, hashedPassword) {

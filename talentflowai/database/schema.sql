@@ -42,6 +42,23 @@ CREATE TABLE user_expectations (
 );
 
 -- =====================================================
+-- TABLA: user_skills (Skills persistidas del perfil)
+-- =====================================================
+CREATE TABLE user_skills (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    display_name VARCHAR(255) NOT NULL,
+    category VARCHAR(100) NOT NULL,
+    level VARCHAR(50) DEFAULT 'intermediate',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, name)
+);
+
+CREATE INDEX idx_user_skills_user_id ON user_skills(user_id);
+
+-- =====================================================
 -- TABLA: vacancies (Vacantes - cache local del mock API)
 -- =====================================================
 CREATE TABLE vacancies (

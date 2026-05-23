@@ -4,16 +4,23 @@
 
 const express = require('express');
 const router = express.Router();
+const fs = require('fs');
 const multer = require('multer');
 const path = require('path');
 const { body } = require('express-validator');
 const profileController = require('../controllers/profile.controller');
 const authMiddleware = require('../utils/authMiddleware');
 
+const uploadDir = path.resolve(__dirname, '../../uploads');
+
 // Configuración de Multer para subir CVs
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, process.env.UPLOAD_DIR || './uploads');
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+
+        cb(null, process.env.UPLOAD_DIR || uploadDir);
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
